@@ -1,4 +1,4 @@
-Package: choisy_cutoff
+Package: choisycutoff
 Type: Package
 Title: Identify a cutoff value from bimodal data 
 Version: 0.1.0
