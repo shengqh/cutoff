@@ -1,10 +1,10 @@
 Package: choisycutoff
 Type: Package
 Title: Identify a cutoff value from bimodal data 
-Version: 0.1.0
-Date: 2015-05-01
+Version: 0.1.1
+Date: 2021-07-15
 Authors@R: person("Marc", "Choisy", email = "marc.choisy@ird.fr",role = c("aut", "cre"))
-Maintainer: Who to complain to <yourfault@somewhere.net>
+Maintainer: shengqh@gmail.com
 Description: Estimates a finite mixture model to bimodal data using normal,
 	log-normal, gamma of Weibull distributions. Estimations are performed
 	with the Expectation-Maximization algorithm. Confidence intervals are
