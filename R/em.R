@@ -21,11 +21,18 @@ mLL <- function(mu1,sigma1,mu2,sigma2,lambda,data,D1,D2) {
 
 #' Starting values of the parameter of a finite mixture model.
 #' 
+#' @param cutoff_startval A numerical scalar indicating the value of predefined 
+#'  cutoff.
 #' @keywords internal
 # This function calculates the starting values of parameter "lambda".
-startval <- function(data,D1,D2) {
+startval <- function(data,D1,D2,cutoff_startval=NA) {
   #  require(tree) # for "tree".
-  thresh <- tree::tree(data~data)$frame$yval[1]
+  if(!is.na(cutoff_startval)){
+    thresh=cutoff_startval
+  }else{
+    #thresh <- tree::tree(data~data)$frame$yval[1]
+    thresh <- as.numeric(gsub("<", "", tree::tree(data~data)$frame$splits[1,1]))
+  }
   sel <- data<thresh
   data1 <- data[sel]
   data2 <- data[!sel]
@@ -64,6 +71,8 @@ startval <- function(data,D1,D2) {
 #'  See Details.
 #' @param t A numerical scalar indicating the value below which the E-M
 #' 	algorithm should stop.
+#' @param cutoff_startval A numerical scalar indicating the value of predefined 
+#'  cutoff.
 #' @return A list with class \code{em} containing the following components:
 #' 	\item{lambda}{a numerical vector of length \code{length(data)} containing,
 #'    for each datum, the probability to belong to distribution \code{D1}.}
@@ -108,10 +117,10 @@ startval <- function(data,D1,D2) {
 #' @export
 # This function uses the EM algorithm to calculates parameters "lambda"
 # (E step), "mu1", "sigma1", "mu2" and "sigma2" (M step).
-em <- function(data,D1,D2,t=1e-64) {
+em <- function(data,D1,D2,t=1e-64,cutoff_startval=NA) {
   data_name <- unlist(strsplit(deparse(match.call()),"="))[2]
   data_name <- sub(",.*$","",gsub(" ","",data_name))
-  start <- as.list(startval(data,D1,D2))
+  start <- as.list(startval(data,D1,D2,cutoff_startval=cutoff_startval))
   D1b <- hash[[D1]]
   D2b <- hash[[D2]]
   lambda0 <- 0 # the previous value of lambda (scalar).
