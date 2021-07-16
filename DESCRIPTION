@@ -3,8 +3,9 @@ Type: Package
 Title: Identify a cutoff value from bimodal data 
 Version: 0.1.1
 Date: 2021-07-15
-Authors@R: person("Marc", "Choisy", email = "marc.choisy@ird.fr",role = c("aut", "cre"))
-Maintainer: shengqh@gmail.com
+Authors@R: c(person("Marc", "Choisy", email = "marc.choisy@ird.fr",role = c("aut", "cre")),
+             person("Quanhu", "sheng", email = "shengqh@gmail.com",role = c("ctb")))
+Maintainer: Quanhu Sheng<shengqh@gmail.com>             
 Description: Estimates a finite mixture model to bimodal data using normal,
 	log-normal, gamma of Weibull distributions. Estimations are performed
 	with the Expectation-Maximization algorithm. Confidence intervals are
