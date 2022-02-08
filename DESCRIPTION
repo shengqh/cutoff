@@ -1,8 +1,8 @@
 Package: choisycutoff
 Type: Package
 Title: Identify a cutoff value from bimodal data 
-Version: 0.1.1
-Date: 2021-07-15
+Version: 0.1.2
+Date: 2022-02-08
 Authors@R: c(person("Marc", "Choisy", email = "marc.choisy@ird.fr",role = c("aut", "cre")),
              person("Quanhu", "sheng", email = "shengqh@gmail.com",role = c("ctb")))
 Maintainer: Quanhu Sheng<shengqh@gmail.com>             
