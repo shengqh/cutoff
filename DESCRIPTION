@@ -20,3 +20,4 @@ Suggests:
   testthat
 VignetteBuilder: knitr
 LazyData: true
+RoxygenNote: 7.1.1

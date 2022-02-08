@@ -24,14 +24,18 @@ mLL <- function(mu1,sigma1,mu2,sigma2,lambda,data,D1,D2) {
 #' @param cutoff_startval A numerical scalar indicating the value of predefined 
 #'  cutoff.
 #' @keywords internal
+#' @export
 # This function calculates the starting values of parameter "lambda".
-startval <- function(data,D1,D2,cutoff_startval=NA) {
+startval <- function(data,D1,D2,cutoff_startval=NA,tree_value=1) {
   #  require(tree) # for "tree".
   if(!is.na(cutoff_startval)){
     thresh=cutoff_startval
   }else{
-    #thresh <- tree::tree(data~data)$frame$yval[1]
-    thresh <- as.numeric(gsub("<", "", tree::tree(data~data)$frame$splits[1,1]))
+    if(tree_value == 1){
+      thresh <- as.numeric(gsub("<", "", tree::tree(data~data)$frame$splits[1,1]))
+    }else{
+      thresh <- tree::tree(data~data)$frame$yval[1]
+    }
   }
   sel <- data<thresh
   data1 <- data[sel]
@@ -39,8 +43,8 @@ startval <- function(data,D1,D2,cutoff_startval=NA) {
   lambda <- length(data1)/length(data)
   param1 <- MASS::fitdistr(data1,D1)$est
   param2 <- MASS::fitdistr(data2,D2)$est
-  out <- c(param1,param2,lambda)
-  names(out) <- c("mu1","sigma1","mu2","sigma2","lambda")
+  out <- c(param1,param2,lambda, thresh)
+  names(out) <- c("mu1","sigma1","mu2","sigma2","lambda", "thresh")
   return(out)
 }
 
@@ -117,36 +121,39 @@ startval <- function(data,D1,D2,cutoff_startval=NA) {
 #' @export
 # This function uses the EM algorithm to calculates parameters "lambda"
 # (E step), "mu1", "sigma1", "mu2" and "sigma2" (M step).
-em <- function(data,D1,D2,t=1e-64,cutoff_startval=NA) {
-  data_name <- unlist(strsplit(deparse(match.call()),"="))[2]
-  data_name <- sub(",.*$","",gsub(" ","",data_name))
-  start <- as.list(startval(data,D1,D2,cutoff_startval=cutoff_startval))
-  D1b <- hash[[D1]]
-  D2b <- hash[[D2]]
-  lambda0 <- 0 # the previous value of lambda (scalar).
+em<-function(data, data_name="em", D1="normal", D2="normal", t=1e-64, cutoff_startval=NA, tree_value=1, max_iteration=1000){
+  start <- as.list(startval(data, D1, D2, cutoff_startval=cutoff_startval, tree_value=tree_value))
+  start.val <-start$thresh
+  
+  D1b <- choisycutoff:::hash[[D1]]
+  D2b <- choisycutoff:::hash[[D2]]
+  lambda0 <- 0
   with(start, {
-    while(abs(lambda0-mean(lambda))>t) {
+    iteration = 0
+    while (abs(lambda0 - mean(lambda)) > t) {
       lambda <- mean(lambda)
       lambda0 <- lambda
-# Expectation step:
-      distr1 <- lambda*D1b(data,mu1,sigma1)
-      distr2 <- (1-lambda)*D2b(data,mu2,sigma2)
-      lambda <- distr1/(distr1+distr2) # lambda is a vector.
-# Minimization step (maximum-likelihood parameters estimations):
-      mLL2 <- function(mu1,sigma1,mu2,sigma2)
-			return(mLL(mu1,sigma1,mu2,sigma2,lambda,data,D1b,D2b))
-      start <- as.list(log(c(mu1=mu1,sigma1=sigma1,mu2=mu2,sigma2=sigma2)))
-      out <- bbmle::mle2(mLL2,start,"Nelder-Mead")
-# The following 4 lines assign the MLE values to the corresponding parameters:
+      distr1 <- lambda * D1b(data, mu1, sigma1)
+      distr2 <- (1 - lambda) * D2b(data, mu2, sigma2)
+      lambda <- distr1/(distr1 + distr2)
+      mLL2 <- function(mu1, sigma1, mu2, sigma2) return(choisycutoff:::mLL(mu1, 
+                                                                           sigma1, mu2, sigma2, lambda, data, D1b, D2b))
+      start <- as.list(log(c(mu1 = mu1, sigma1 = sigma1, 
+                             mu2 = mu2, sigma2 = sigma2)))
+      out <- bbmle::mle2(mLL2, start, "Nelder-Mead")
       coef <- out@coef
       coef_n <- names(coef)
       names(coef) <- NULL
-      for(i in 1:4) assign(coef_n[i],exp(coef[i]))
+      for (i in 1:4) assign(coef_n[i], exp(coef[i]))
+      iteration = iteration + 1
+      if(iteration >= max_iteration){
+        warning(paste0("reach ", max_iteration, " iterations, break."))
+        break
+      }
     }
-# Put in shape and return the output:
-    out <- list(
-		lambda=lambda,param=exp(out@coef),D1=D1,D2=D2,deviance=out@min,
-			data=data,data_name=data_name,out=out,t=t)
+    out <- list(lambda = lambda, param = exp(out@coef), D1 = D1, 
+                D2 = D2, deviance = out@min, data = values, data_name = data_name, 
+                out = out, t = t, start.val=start.val)
     class(out) <- "em"
     return(out)
   })
@@ -157,6 +164,7 @@ em <- function(data,D1,D2,t=1e-64,cutoff_startval=NA) {
 #' Print method of S3-class "em".
 #'
 #' @S3method print em
+#' @export
 print.em <- function(object) {
   hash <- list(
     normal=c("mean","sd"),
@@ -189,6 +197,7 @@ print.em <- function(object) {
 #' Lines method of S3-class "em".
 #'
 #' @S3method lines em
+#' @export
 lines.em <- function(object,...) {
 # ...: parameter passed to the "line" function.
   with(object,with(as.list(param), {
@@ -229,6 +238,7 @@ lines.em <- function(object,...) {
 #' @S3method confint em
 # This function returns the parameter values and their confidence
 # intervals from an output of the "em" function.
+#' @export
 confint.em <- function(object,t=1e-64,nb=10,level=.95) {
   a <- coef_ci(object,level)
   b <- lambda_ci(object,t,nb,level)

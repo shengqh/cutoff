@@ -84,6 +84,7 @@ cutoff0 <- function(mu1,sigma1,mu2,sigma2,lambda,D1,D2,distr=2,type1=.05) {
 #'    col=rgb(0,0,1,.2),border=NA)
 #' abline(v=cut_off[-1],lty=2,col="blue")
 #' abline(v=cut_off[1],col="blue")
+#' @importFrom stats uniroot
 #' @export
 # This function returns cutoff value together with confidence interval from an
 # output of the "em" function.
@@ -94,7 +95,7 @@ cutoff <- function(object,t=1e-64,nb=10,distr=2,type1=.05,level=.95) {
 # The dictionary:  
 #  hash <- c(normal=dnorm,"log-normal"=dlnorm,gamma=dgamma,weibull=dweibull)
   with(object,{
-    coef <- coef(out)
+    coef <- out@coef
     the_names <- names(coef)
 # First we draw values for mu1, sigma1, mu2 and sigma2 in a multinormal
 # distribution:
